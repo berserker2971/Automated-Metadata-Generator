@@ -1,10 +1,14 @@
+import numpy as np
 import os
 import subprocess
 from fpdf import FPDF
 import pdfplumber
 from pdf2image import convert_from_path
-import pytesseract
+import easyocr
 import tempfile
+
+# Initialize EasyOCR reader once
+reader = easyocr.Reader(['en'])  # Add language codes as needed
 
 def txt_to_pdf(txt_path, pdf_path):
     pdf = FPDF()
@@ -17,13 +21,16 @@ def txt_to_pdf(txt_path, pdf_path):
     pdf.output(pdf_path)
 
 def convert_docx_to_pdf_libreoffice(docx_path, pdf_path):
-    subprocess.run([
-        "libreoffice",
-        "--headless",
-        "--convert-to", "pdf",
-        "--outdir", os.path.dirname(pdf_path),
-        docx_path
-    ], check=True)
+    try:
+        subprocess.run([
+            "libreoffice",
+            "--headless",
+            "--convert-to", "pdf",
+            "--outdir", os.path.dirname(pdf_path),
+            docx_path
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"LibreOffice failed to convert {docx_path}") from e
 
 def pdf_extract(file_path):
     text = ""
@@ -37,7 +44,8 @@ def ocr_pdf_extract(file_path):
     with tempfile.TemporaryDirectory() as temp_dir:
         images = convert_from_path(file_path, dpi=300, output_folder=temp_dir)
         for img in images:
-            text += pytesseract.image_to_string(img)
+            result = reader.readtext(np.array(img))
+            text += ' '.join([res[1] for res in result]) + "\n"
     return text.strip()
 
 def convert_pdf(file_path):
