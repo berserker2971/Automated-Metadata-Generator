@@ -11,7 +11,7 @@ def extract_title(text, title_len = 20):
             return line.strip()
     return "No Title"
 
-def generate_summary(text, max_len=150):
+def generate_summary(text, max_len=350):
     if len(text.split()) < 40:
         return text.strip()
     chunks = [text[i:i+1000] for i in range(0, len(text), 1000)]
