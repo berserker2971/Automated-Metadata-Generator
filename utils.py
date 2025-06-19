@@ -1,60 +1,63 @@
 import os
-from docx2pdf import convert as convert_docx_to_pdf
-from fpdf import FPDF
+from docx import Document
+from PIL import Image
+from io import BytesIO
 import pdfplumber
-from pdf2image import convert_from_path
-import pytesseract
-import tempfile
+import fitz
+from zipfile import ZipFile
+import easyocr
+import numpy as np
 
-def txt_to_pdf(txt_path, pdf_path):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Arial", size=12)
-    with open(txt_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            pdf.multi_cell(0, 10, line)
-    pdf.output(pdf_path)
+reader = easyocr.Reader(['en'], gpu=False)
 
 def pdf_extract(file_path):
-    text = ""
     with pdfplumber.open(file_path) as pdf:
-        for page in pdf.pages:
-            text += page.extract_text() or ""
-    return text.strip()
+        return "\n".join(page.extract_text() or "" for page in pdf.pages).strip()
 
 def ocr_pdf_extract(file_path):
     text = ""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        images = convert_from_path(file_path, dpi=300, output_folder=temp_dir)
-        for img in images:
-            text += pytesseract.image_to_string(img)
+    doc = fitz.open(file_path)
+    for page in doc:
+        pix = page.get_pixmap(dpi=300)
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        img_np = np.array(img) 
+        result = reader.readtext(img_np)
+        text += " ".join([txt for _, txt, _ in result]) + "\n"
     return text.strip()
 
-def convert_pdf(file_path):
-    base, ext = os.path.splitext(file_path)
-    ext = ext.lower()
+def docx_extract(file_path):
+    doc = Document(file_path)
+    text = "\n".join(para.text for para in doc.paragraphs).strip()
+    return text or ocr_docx_extract(file_path)
 
-    if ext == ".pdf":
-        return file_path
-    elif ext == ".docx":
-        pdf_path = base + ".converted.pdf"
-        convert_docx_to_pdf(file_path, pdf_path)
-        return pdf_path
-    elif ext == ".txt":
-        pdf_path = base + ".converted.pdf"
-        txt_to_pdf(file_path, pdf_path)
-        return pdf_path
-    else:
-        raise ValueError("Unsupported file format.")
+def ocr_docx_extract(file_path):
+    text = ""
+    with ZipFile(file_path) as docx_zip:
+        for image_name in docx_zip.namelist():
+            if image_name.startswith("word/media/"):
+                with docx_zip.open(image_name) as img_file:
+                    try:
+                        image = Image.open(BytesIO(img_file.read()))
+                        img_np = np.array(image)
+                        result = reader.readtext(img_np)
+                        text += " ".join([txt for _, txt, _ in result]) + "\n"
+                    except:
+                        pass
+    return text.strip()
+
+def txt_extract(file_path):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return f.read().strip()
 
 def extract(file_path):
-    path = convert_pdf(file_path)
-    text = pdf_extract(path)
-    if not text.strip():
-        text = ocr_pdf_extract(path)
+    ext = os.path.splitext(file_path)[1].lower()
 
-    if path != file_path and path.endswith(".converted.pdf") and os.path.exists(path):
-        os.remove(path)
-
-    return text
+    if ext == ".pdf":
+        text = pdf_extract(file_path)
+        return text or ocr_pdf_extract(file_path)
+    elif ext == ".docx":
+        return docx_extract(file_path)
+    elif ext == ".txt":
+        return txt_extract(file_path)
+    else:
+        raise ValueError("Unsupported file format.")

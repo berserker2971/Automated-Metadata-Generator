@@ -1,9 +1,10 @@
 streamlit
-fpdf
+python-docx
 pdfplumber
 pytesseract
-pdf2image
-docx2pdf
+pillow
+pymupdf
 transformers
 keybert
 sentence-transformers
+scikit-learn
