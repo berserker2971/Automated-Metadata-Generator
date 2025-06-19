@@ -1,14 +1,13 @@
 import numpy as np
 import os
-import subprocess
 from fpdf import FPDF
 import pdfplumber
 from pdf2image import convert_from_path
 import easyocr
 import tempfile
+import pypandoc
 
-# Initialize EasyOCR reader once
-reader = easyocr.Reader(['en'])  # Add language codes as needed
+reader = easyocr.Reader(['en'])
 
 def txt_to_pdf(txt_path, pdf_path):
     pdf = FPDF()
@@ -20,17 +19,11 @@ def txt_to_pdf(txt_path, pdf_path):
             pdf.multi_cell(0, 10, line)
     pdf.output(pdf_path)
 
-def convert_docx_to_pdf_libreoffice(docx_path, pdf_path):
+def convert_docx_to_pdf_pandoc(docx_path, pdf_path):
     try:
-        subprocess.run([
-            "libreoffice",
-            "--headless",
-            "--convert-to", "pdf",
-            "--outdir", os.path.dirname(pdf_path),
-            docx_path
-        ], check=True)
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"LibreOffice failed to convert {docx_path}") from e
+        pypandoc.convert_file(docx_path, 'pdf', outputfile=pdf_path)
+    except Exception as e:
+        raise RuntimeError(f"Pandoc failed to convert {docx_path}") from e
 
 def pdf_extract(file_path):
     text = ""
@@ -56,7 +49,7 @@ def convert_pdf(file_path):
         return file_path
     elif ext == ".docx":
         pdf_path = base + ".converted.pdf"
-        convert_docx_to_pdf_libreoffice(file_path, pdf_path)
+        convert_docx_to_pdf_pandoc(file_path, pdf_path)
         return pdf_path
     elif ext == ".txt":
         pdf_path = base + ".converted.pdf"
