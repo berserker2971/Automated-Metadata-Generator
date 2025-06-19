@@ -2,6 +2,7 @@ import streamlit as st
 from utils import extract
 from metadata_gen import generate_metadata
 import json
+import os
 
 st.set_page_config(page_title="Auto Metadata Generator", layout="centered")
 
@@ -12,10 +13,11 @@ uploaded_file = st.file_uploader("Upload File", type=["pdf", "docx", "txt"])
 
 if uploaded_file is not None:
     with st.spinner("🔍 Processing file..."):
-        with open(uploaded_file.name, "wb") as f:
+        file_path = uploaded_file.name
+        with open(file_path, "wb") as f:
             f.write(uploaded_file.read())
         try:
-            text = extract(uploaded_file.name)
+            text = extract(file_path)
             metadata = generate_metadata(text)
 
             st.success("✅ Metadata Generated!")
@@ -35,6 +37,8 @@ if uploaded_file is not None:
                 file_name="metadata.json",
                 mime="application/json"
             )
-
         except Exception as e:
             st.error(f"❌ Error processing file: {e}")
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)

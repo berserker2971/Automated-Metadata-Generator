@@ -1,13 +1,10 @@
-import numpy as np
 import os
+from docx2pdf import convert as convert_docx_to_pdf
 from fpdf import FPDF
 import pdfplumber
 from pdf2image import convert_from_path
-import easyocr
+import pytesseract
 import tempfile
-import pypandoc
-
-reader = easyocr.Reader(['en'])
 
 def txt_to_pdf(txt_path, pdf_path):
     pdf = FPDF()
@@ -18,12 +15,6 @@ def txt_to_pdf(txt_path, pdf_path):
         for line in f:
             pdf.multi_cell(0, 10, line)
     pdf.output(pdf_path)
-
-def convert_docx_to_pdf_pandoc(docx_path, pdf_path):
-    try:
-        pypandoc.convert_file(docx_path, 'pdf', outputfile=pdf_path)
-    except Exception as e:
-        raise RuntimeError(f"Pandoc failed to convert {docx_path}") from e
 
 def pdf_extract(file_path):
     text = ""
@@ -37,8 +28,7 @@ def ocr_pdf_extract(file_path):
     with tempfile.TemporaryDirectory() as temp_dir:
         images = convert_from_path(file_path, dpi=300, output_folder=temp_dir)
         for img in images:
-            result = reader.readtext(np.array(img))
-            text += ' '.join([res[1] for res in result]) + "\n"
+            text += pytesseract.image_to_string(img)
     return text.strip()
 
 def convert_pdf(file_path):
@@ -49,7 +39,7 @@ def convert_pdf(file_path):
         return file_path
     elif ext == ".docx":
         pdf_path = base + ".converted.pdf"
-        convert_docx_to_pdf_pandoc(file_path, pdf_path)
+        convert_docx_to_pdf(file_path, pdf_path)
         return pdf_path
     elif ext == ".txt":
         pdf_path = base + ".converted.pdf"
