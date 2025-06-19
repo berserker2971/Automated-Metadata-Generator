@@ -1,9 +1,10 @@
 streamlit
 python-docx
 pdfplumber
-pytesseract
 pillow
 pymupdf
+easyocr
+numpy
 transformers
 keybert
 sentence-transformers
