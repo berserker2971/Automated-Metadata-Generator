@@ -1,0 +1,9 @@
+streamlit
+fpdf
+pdfplumber
+pytesseract
+pdf2image
+docx2pdf
+transformers
+keybert
+sentence-transformers
