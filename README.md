@@ -3,7 +3,7 @@
 
 An AI-powered Streamlit web app that extracts structured metadata (Title, Summary, Keywords) from documents like PDFs, Word files, and plain text files. This tool is especially useful for content archiving, indexing, and semantic search.
 
-👉 **Live App**: [automated-metadata-generator.streamlit.app](https://automated-metadata-generator-a5hzztrdvzww4s2hh9umqq.streamlit.app/)
+👉 **Live App**: [automated-metadata-generator.streamlit.app](https://automated-metadata-generator.streamlit.app/)
 
 ---
 
