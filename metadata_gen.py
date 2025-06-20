@@ -1,7 +1,7 @@
 from transformers import pipeline
 from keybert import KeyBERT
 
-summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 kw_model = KeyBERT(model="all-MiniLM-L6-v2")
 
 def extract_title(text, title_len = 20):

@@ -12,6 +12,9 @@ st.markdown("Upload a document (`.pdf`, `.docx`, `.txt`) and get structured meta
 uploaded_file = st.file_uploader("Upload File", type=["pdf", "docx", "txt"])
 
 if uploaded_file is not None:
+    if uploaded_file.size > 5_000_000:
+        st.error("❌ File too large. Please upload a file smaller than 5MB.")
+        st.stop()
     with st.spinner("🔍 Processing file..."):
         file_path = uploaded_file.name
         with open(file_path, "wb") as f:

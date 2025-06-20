@@ -9,3 +9,4 @@ transformers
 keybert
 sentence-transformers
 scikit-learn
+easyocr
