@@ -42,7 +42,7 @@ def ocr_pdf_extract(file_path, max_pages=3):
             if i >= max_pages:
                 break
             try:
-                pix = page.get_pixmap(dpi=150)
+                pix = page.get_pixmap(dpi=100)
                 img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples).convert("L")
                 img_np = np.array(img)
                 result = run_easyocr(img_np)
