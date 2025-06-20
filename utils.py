@@ -1,19 +1,26 @@
 import os
-import gc
-import re
-import numpy as np
 from docx import Document
 from PIL import Image
 from io import BytesIO
-from zipfile import ZipFile
 import pdfplumber
 import fitz
+from zipfile import ZipFile
+import numpy as np
 import streamlit as st
-import easyocr
+import gc
+import re
 
-@st.cache_resource
-def get_ocr_reader():
-    return easyocr.Reader(['en'], gpu=False)
+def run_easyocr(img_np):
+    import easyocr
+    try:
+        reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+        result = reader.readtext(img_np)
+        del reader
+        gc.collect()
+        return result
+    except Exception as e:
+        st.warning(f"OCR reader failed: {e}")
+        return []
 
 def pdf_extract(file_path):
     with pdfplumber.open(file_path) as pdf:
@@ -21,31 +28,25 @@ def pdf_extract(file_path):
 
 def ocr_pdf_extract(file_path, max_pages=3):
     text = ""
-    reader = get_ocr_reader()
-    
     try:
-        with fitz.open(file_path) as doc:
-            for i, page in enumerate(doc):
-                if i >= max_pages:
-                    break
-                try:
-                    pix = page.get_pixmap(dpi=300)
-                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                    img_np = np.array(img)
-
-                    result = reader.readtext(img_np)
-                    text += " ".join([txt for _, txt, _ in result]) + "\n"
-
-                    # Cleanup
-                    del pix, img, img_np, result
-                    gc.collect()
-
-                except Exception as e:
-                    st.warning(f"OCR failed on page {i+1}: {e}")
-    finally:
-        del reader
+        doc = fitz.open(file_path)
+        for i, page in enumerate(doc):
+            if i >= max_pages:
+                break
+            try:
+                pix = page.get_pixmap(dpi=300)
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                img_np = np.array(img)
+                result = run_easyocr(img_np)
+                text += " ".join([txt for _, txt, _ in result]) + "\n"
+                del img, img_np, result, pix
+                gc.collect()
+            except Exception as e:
+                st.warning(f"OCR failed on page {i+1}: {e}")
+        del doc
         gc.collect()
-
+    except Exception as e:
+        st.error(f"PDF OCR processing failed: {e}")
     return text.strip()
 
 def docx_extract(file_path):
@@ -55,8 +56,6 @@ def docx_extract(file_path):
 
 def ocr_docx_extract(file_path):
     text = ""
-    reader = get_ocr_reader()
-
     try:
         with ZipFile(file_path) as docx_zip:
             for image_name in docx_zip.namelist():
@@ -65,18 +64,14 @@ def ocr_docx_extract(file_path):
                         try:
                             image = Image.open(BytesIO(img_file.read()))
                             img_np = np.array(image)
-
-                            result = reader.readtext(img_np)
+                            result = run_easyocr(img_np)
                             text += " ".join([txt for _, txt, _ in result]) + "\n"
-
                             del image, img_np, result
                             gc.collect()
                         except Exception as e:
                             st.warning(f"OCR failed on image {image_name}: {e}")
-    finally:
-        del reader
-        gc.collect()
-
+    except Exception as e:
+        st.error(f"DOCX OCR failed: {e}")
     return text.strip()
 
 def txt_extract(file_path):
@@ -84,9 +79,9 @@ def txt_extract(file_path):
         return f.read().strip()
 
 def clean_text(text):
-    text = re.sub(r"\n+", "\n", text)                     # Collapse multiple newlines
-    text = re.sub(r"\s{2,}", " ", text)                   # Collapse excess spaces
-    text = re.sub(r"[^\w\s.,;:?!'\-]", '', text)          # Remove weird symbols
+    text = re.sub(r"\n+", "\n", text)
+    text = re.sub(r"\s{2,}", " ", text)
+    text = re.sub(r"[^\w\s.,;:?!'-]", '', text)
     return text.strip()
 
 def extract(file_path):
@@ -95,7 +90,6 @@ def extract(file_path):
     if ext == ".pdf":
         text = pdf_extract(file_path)
         if not text:
-            st.info("No text detected in PDF, attempting OCR...")
             text = ocr_pdf_extract(file_path)
     elif ext == ".docx":
         text = docx_extract(file_path)
