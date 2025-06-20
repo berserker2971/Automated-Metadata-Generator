@@ -1,0 +1,126 @@
+OOPS:
+
+Objects: These are the entities.
+Class : Blueprint
+
+class student{
+	string name;				//properties
+
+	void getname(){
+		return name;
+	}					//member functions
+};
+
+Access Specifiers
+Private - only accessible inside the class
+Public - accessible globally
+Protected - accessible to the inherited class only
+
+
+class student{
+private:
+	float marks;				// default is private
+public:
+	string name;
+};
+
+ENCAPSULATION:
+Wrapping up of data and member functions to make a class is called encapsulation
+above is the egs;
+
+Constructor: method called at time of object creation used for initialization(always defined publicly)
+-same name as class
+-doesn't have return type(only called once)
+-memory allocation happens when its called
+
+egs;
+
+non-parameterized constructor::
+class student{
+private:
+	float marks;				// default is private
+public:
+	student(){
+	//write however u want to initialize	//non-parameterized constructor
+	}
+	string name;
+};
+
+parameterized constructor::
+student(int n, string s){
+	age=n;
+	name=s;
+	//write however u want to initialize	//parameterized constructor
+}
+student s1(4,"hu");				//initializes with input values directly
+
+constructor overloading when a constructor is called but there are multiple constructors defined so by the number of parameter it finds itself the corresponding constructor to call;(egs of polymorphism)
+
+this-> pointer used to define its inside the class and defines the properties of the object itself
+this-> name=name;
+
+same thing as (*this).property == this->property
+copy constructor::
+used to copy properties of one object to another
+student s1(4,"hi");
+student s2(s1);					//default copy constructor
+
+	student(student &original){		//pass by reference (custom copy constructor)--called same as default copy
+		this->name = original.name
+	}
+
+shallow copy vs deep copy:
+shallow copy:- copies all the member values from one object to another;(gets error while dynamic memory allocations like for egs if a pointer location is stored in a object then it is copied to another object, now the new object pointed value is changed it automatically changes the value of older object)
+for egs:
+
+class student{
+public:
+    string name;
+    double* it;
+
+    student(string s, double x){
+        this->name=s;
+        it = new double;
+        (*it)=x;
+    }
+
+    student(student &ori){
+        this->name=ori.name;
+        this->it=ori.it;
+    }
+};
+
+deep copy- it also deals with the above problem no default copy constructor is present for this, have to make custom one
+
+
+class student{
+public:
+    string name;
+    double* it;
+
+    student(string s, double x){
+        this->name=s;
+        it = new double;
+        (*it)=x;
+    }
+
+    student(student &ori){
+        this->name=ori.name;
+	tmp= new double;			// change here
+        (*tmp)=*(ori.it);
+    }
+};
+
+
+Destructor- basically deletes every thing but same problem rises regarding dynamic memory so, we have to delete the pointer allocated memory manually via custom destructor
+
+~student(){
+	delete it;
+}
+
+if not done properly memory leak will happen; causing increase in allocated memory while not being used
+
+
+INHERITANCE:
+
+
