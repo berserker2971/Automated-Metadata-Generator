@@ -1,6 +1,18 @@
+import streamlit as st
+from utils import extract
+from metadata_gen import generate_metadata
+import json
+import os
 from transformers import pipeline
 from keybert import KeyBERT
-import streamlit as st
+
+# Streamlit UI setup
+st.set_page_config(page_title="Auto Metadata Generator", layout="centered")
+st.title("📄 Automated Metadata Generator")
+st.markdown("Upload a document (`.pdf`, `.docx`, `.txt`) to get structured metadata.")
+
+# File uploader
+uploaded_file = st.file_uploader("Upload File", type=["pdf", "docx", "txt"])
 
 @st.cache_resource
 def get_summarizer():
@@ -10,47 +22,42 @@ def get_summarizer():
 def get_kw_model():
     return KeyBERT(model="all-MiniLM-L6-v2")
 
-summarizer = get_summarizer()
-kw_model = get_kw_model()
+if uploaded_file is not None:
+    with st.spinner("🔍 Processing file and loading models..."):
+        # Save file
+        file_path = uploaded_file.name
+        with open(file_path, "wb") as f:
+            f.write(uploaded_file.read())
 
-def extract_title(text, title_len=20):
-    for line in text.strip().split('\n'):
-        if line.strip() and len(line.strip().split()) <= title_len:
-            return line.strip()
-    return "No Title"
-
-def generate_summary(text, max_len=350):
-    words = text.split()
-    if len(words) < 40:
-        return text.strip()
-    
-    summaries = []
-    chunk_size = 400  # keep this below token limits
-    for i in range(0, len(words), chunk_size):
-        chunk = " ".join(words[i:i+chunk_size])
         try:
-            summary = summarizer(chunk, max_length=max_len, min_length=30, do_sample=False)[0]['summary_text']
-            summaries.append(summary)
+            text = extract(file_path)
+
+            # Load models only after file is ready
+            summarizer = get_summarizer()
+            kw_model = get_kw_model()
+
+            metadata = generate_metadata(text, summarizer, kw_model)
+
+            st.success("✅ Metadata Generated!")
+            st.markdown("### 🏷️ Title")
+            st.write(metadata['title'])
+
+            st.markdown("### 📚 Summary")
+            st.write(metadata['summary'])
+
+            st.markdown("### 🔑 Keywords")
+            st.write(", ".join(metadata['keywords']))
+
+            st.download_button(
+                label="📥 Download Metadata as JSON",
+                data=json.dumps(metadata, indent=2),
+                file_name="metadata.json",
+                mime="application/json"
+            )
+
         except Exception as e:
-            st.warning(f"Summarization failed on chunk: {e}")
-            continue
+            st.error(f"❌ Error processing file: {e}")
 
-        if len(summaries) >= 2:
-            break
-
-    return " ".join(summaries).strip()
-
-def extract_keywords(text, top_n=5):
-    try:
-        keywords = kw_model.extract_keywords(text, top_n=top_n, stop_words='english')
-        return [kw for kw, _ in keywords]
-    except Exception as e:
-        st.warning(f"Keyword extraction failed: {e}")
-        return []
-
-def generate_metadata(text):
-    return {
-        "title": extract_title(text),
-        "summary": generate_summary(text),
-        "keywords": extract_keywords(text)
-    }
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
