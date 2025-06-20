@@ -1,5 +1,6 @@
 from transformers import pipeline
 from keybert import KeyBERT
+import streamlit as st
 
 summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
 kw_model = KeyBERT(model="all-MiniLM-L6-v2")
@@ -11,12 +12,26 @@ def extract_title(text, title_len = 20):
             return line.strip()
     return "No Title"
 
-def generate_summary(text, max_len=350):
-    if len(text.split()) < 40:
+def generate_summary(text, max_len=200):
+    words = text.split()
+    if len(words) < 40:
         return text.strip()
-    chunks = [text[i:i+1000] for i in range(0, len(text), 1000)]
-    summaries = [summarizer(chunk, max_length=max_len, min_length=30, do_sample=False)[0]['summary_text'] for chunk in chunks[:2]]
-    return " ".join(summaries)
+    
+    summaries = []
+    chunk_size = 400
+    for i in range(0, len(words), chunk_size):
+        chunk = " ".join(words[i:i+chunk_size])
+        try:
+            summary = summarizer(chunk, max_length=max_len, min_length=30, do_sample=False)[0]['summary_text']
+            summaries.append(summary)
+        except Exception as e:
+            st.warning(f"Summarization failed on chunk: {e}")
+            continue
+
+        if len(summaries) >= 2:
+            break
+
+    return " ".join(summaries).strip()
 
 def extract_keywords(text, top_n=5):
     keywords = kw_model.extract_keywords(text, top_n=top_n, stop_words='english')
