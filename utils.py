@@ -34,8 +34,8 @@ def ocr_pdf_extract(file_path, max_pages=3):
             if i >= max_pages:
                 break
             try:
-                pix = page.get_pixmap(dpi=300)
-                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                pix = page.get_pixmap(dpi=150)
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples).convert("L")
                 img_np = np.array(img)
                 result = run_easyocr(img_np)
                 text += " ".join([txt for _, txt, _ in result]) + "\n"
@@ -54,6 +54,8 @@ def docx_extract(file_path):
     text = "\n".join(para.text for para in doc.paragraphs).strip()
     return text or ocr_docx_extract(file_path)
 
+import gc
+
 def ocr_docx_extract(file_path):
     text = ""
     try:
@@ -62,17 +64,21 @@ def ocr_docx_extract(file_path):
                 if image_name.startswith("word/media/"):
                     with docx_zip.open(image_name) as img_file:
                         try:
-                            image = Image.open(BytesIO(img_file.read()))
+                            image = Image.open(BytesIO(img_file.read())).convert("L")
+                            max_size = (1200, 1200)
+                            image.thumbnail(max_size, Image.ANTIALIAS)
                             img_np = np.array(image)
                             result = run_easyocr(img_np)
                             text += " ".join([txt for _, txt, _ in result]) + "\n"
                             del image, img_np, result
                             gc.collect()
+
                         except Exception as e:
                             st.warning(f"OCR failed on image {image_name}: {e}")
     except Exception as e:
         st.error(f"DOCX OCR failed: {e}")
     return text.strip()
+
 
 def txt_extract(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
