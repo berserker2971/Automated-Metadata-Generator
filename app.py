@@ -7,10 +7,12 @@ import os
 st.set_page_config(page_title="Auto Metadata Generator", layout="centered")
 
 st.title("📄 Automated Metadata Generator")
-st.markdown("Upload a document (`.pdf`, `.docx`, `.txt`) and get structured metadata.")
+st.markdown("Upload a document (`.pdf`, `.docx`, `.txt`) — **Max size: 5MB**")
 
-uploaded_file = st.file_uploader("Upload File", type=["pdf", "docx", "txt"])
-
+uploaded_file = st.file_uploader(
+    "Upload File",
+    type=["pdf", "docx", "txt"]
+)
 if uploaded_file is not None:
     if uploaded_file.size > 5_000_000:
         st.error("❌ File too large. Please upload a file smaller than 5MB.")

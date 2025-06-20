@@ -5,10 +5,13 @@ from io import BytesIO
 import pdfplumber
 import fitz
 from zipfile import ZipFile
-import easyocr
 import numpy as np
+import streamlit as st
+import easyocr
 
-reader = easyocr.Reader(['en'], gpu=False)
+@st.cache_resource
+def get_ocr_reader():
+    return easyocr.Reader(['en'], gpu=False)
 
 def pdf_extract(file_path):
     with pdfplumber.open(file_path) as pdf:
@@ -17,12 +20,16 @@ def pdf_extract(file_path):
 def ocr_pdf_extract(file_path):
     text = ""
     doc = fitz.open(file_path)
+    reader = get_ocr_reader()
     for page in doc:
-        pix = page.get_pixmap(dpi=300)
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        img_np = np.array(img) 
-        result = reader.readtext(img_np)
-        text += " ".join([txt for _, txt, _ in result]) + "\n"
+        try:
+            pix = page.get_pixmap(dpi=300)
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            img_np = np.array(img)
+            result = reader.readtext(img_np)
+            text += " ".join([txt for _, txt, _ in result]) + "\n"
+        except Exception as e:
+            st.warning(f"OCR failed on one page: {e}")
     return text.strip()
 
 def docx_extract(file_path):
@@ -32,6 +39,7 @@ def docx_extract(file_path):
 
 def ocr_docx_extract(file_path):
     text = ""
+    reader = get_ocr_reader()
     with ZipFile(file_path) as docx_zip:
         for image_name in docx_zip.namelist():
             if image_name.startswith("word/media/"):
@@ -41,8 +49,8 @@ def ocr_docx_extract(file_path):
                         img_np = np.array(image)
                         result = reader.readtext(img_np)
                         text += " ".join([txt for _, txt, _ in result]) + "\n"
-                    except:
-                        pass
+                    except Exception as e:
+                        st.warning(f"OCR failed on image {image_name}: {e}")
     return text.strip()
 
 def txt_extract(file_path):
