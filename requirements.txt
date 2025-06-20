@@ -10,3 +10,6 @@ keybert
 sentence-transformers
 scikit-learn
 easyocr
+torch
+opencv-python-headless
+scikit-image
