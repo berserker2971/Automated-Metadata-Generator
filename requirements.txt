@@ -10,4 +10,3 @@ keybert
 sentence-transformers
 scikit-learn
 easyocr
-re
