@@ -1,14 +1,16 @@
 import os
-from docx import Document
-from PIL import Image
-from io import BytesIO
-import pdfplumber
-import fitz
-from zipfile import ZipFile
-import numpy as np
-import streamlit as st
 import gc
 import re
+from io import BytesIO
+from zipfile import ZipFile
+
+import numpy as np
+import streamlit as st
+from PIL import Image
+from docx import Document
+import pdfplumber
+import fitz
+
 
 def run_easyocr(img_np):
     import easyocr
@@ -22,9 +24,15 @@ def run_easyocr(img_np):
         st.warning(f"OCR reader failed: {e}")
         return []
 
+
 def pdf_extract(file_path):
-    with pdfplumber.open(file_path) as pdf:
-        return "\n".join(page.extract_text() or "" for page in pdf.pages).strip()
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            return "\n".join(page.extract_text() or "" for page in pdf.pages).strip()
+    except Exception as e:
+        st.error(f"PDF text extraction failed: {e}")
+        return ""
+
 
 def ocr_pdf_extract(file_path, max_pages=3):
     text = ""
@@ -39,6 +47,8 @@ def ocr_pdf_extract(file_path, max_pages=3):
                 img_np = np.array(img)
                 result = run_easyocr(img_np)
                 text += " ".join([txt for _, txt, _ in result]) + "\n"
+
+                # Cleanup
                 del img, img_np, result, pix
                 gc.collect()
             except Exception as e:
@@ -49,15 +59,19 @@ def ocr_pdf_extract(file_path, max_pages=3):
         st.error(f"PDF OCR processing failed: {e}")
     return text.strip()
 
-def docx_extract(file_path):
-    doc = Document(file_path)
-    text = "\n".join(para.text for para in doc.paragraphs).strip()
-    return text or ocr_docx_extract(file_path)
 
-import gc
+def docx_extract(file_path):
+    try:
+        doc = Document(file_path)
+        text = "\n".join(para.text for para in doc.paragraphs).strip()
+        return text or ocr_docx_extract(file_path)
+    except Exception as e:
+        st.error(f"DOCX text extraction failed: {e}")
+        return ocr_docx_extract(file_path)
+
 
 def ocr_docx_extract(file_path):
-    text = ""
+    text_chunks = []
     try:
         with ZipFile(file_path) as docx_zip:
             for image_name in docx_zip.namelist():
@@ -65,30 +79,38 @@ def ocr_docx_extract(file_path):
                     with docx_zip.open(image_name) as img_file:
                         try:
                             image = Image.open(BytesIO(img_file.read())).convert("L")
-                            max_size = (1200, 1200)
-                            image.thumbnail(max_size, Image.ANTIALIAS)
+                            image.load()
+                            image.thumbnail((1200, 1200), Image.LANCZOS)
                             img_np = np.array(image)
-                            result = run_easyocr(img_np)
-                            text += " ".join([txt for _, txt, _ in result]) + "\n"
-                            del image, img_np, result
-                            gc.collect()
 
+                            result = run_easyocr(img_np)
+                            chunk = " ".join([txt for _, txt, _ in result])
+                            text_chunks.append(chunk)
+
+                            del image, img_np, result, chunk
+                            gc.collect()
                         except Exception as e:
                             st.warning(f"OCR failed on image {image_name}: {e}")
     except Exception as e:
         st.error(f"DOCX OCR failed: {e}")
-    return text.strip()
+    return "\n".join(text_chunks).strip()
 
 
 def txt_extract(file_path):
-    with open(file_path, 'r', encoding='utf-8') as f:
-        return f.read().strip()
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except Exception as e:
+        st.error(f"TXT extraction failed: {e}")
+        return ""
+
 
 def clean_text(text):
     text = re.sub(r"\n+", "\n", text)
     text = re.sub(r"\s{2,}", " ", text)
     text = re.sub(r"[^\w\s.,;:?!'-]", '', text)
     return text.strip()
+
 
 def extract(file_path):
     ext = os.path.splitext(file_path)[1].lower()

@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 import streamlit as st
 import fitz  # PyMuPDF
+import gc
 
 st.set_page_config(page_title="EasyOCR PDF Test", layout="centered")
 st.header("📄 EasyOCR on PDF")
@@ -15,31 +16,41 @@ if uploaded:
     with open(pdf_path, "wb") as f:
         f.write(uploaded.read())
 
-    # Load PDF
+    # Initialize EasyOCR once
+    st.info("Initializing EasyOCR Reader...")
+    reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+
     st.info("Processing PDF...")
-    doc = fitz.open(pdf_path)
-    reader = easyocr.Reader(['en'], gpu=False)
     extracted_text = ""
 
-    for page_num, page in enumerate(doc):
-        st.write(f"### Page {page_num + 1}")
-        try:
-            # Convert page to image
-            pix = page.get_pixmap(dpi=300)
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            st.image(img, caption=f"Page {page_num + 1}", use_column_width=True)
+    try:
+        doc = fitz.open(pdf_path)
+        for page_num, page in enumerate(doc):
+            st.write(f"### Page {page_num + 1}")
+            try:
+                # Lower DPI to reduce memory usage
+                pix = page.get_pixmap(dpi=150)  # was 300
+                mode = "RGB" if pix.alpha == 0 else "RGBA"
+                img = Image.frombytes(mode, [pix.width, pix.height], pix.samples)
+                img = img.convert("L")  # Grayscale for OCR
+                st.image(img, caption=f"Page {page_num + 1}", use_column_width=True)
 
-            # OCR
-            img_np = np.array(img)
-            result = reader.readtext(img_np)
+                img_np = np.array(img)
+                result = reader.readtext(img_np)
+                page_text = "\n".join([text for _, text, _ in result])
+                extracted_text += page_text + "\n"
 
-            page_text = "\n".join([text for _, text, _ in result])
-            extracted_text += page_text + "\n"
+                st.code(page_text)
 
-            st.code(page_text)
-        except Exception as e:
-            st.error(f"Failed on page {page_num + 1}: {e}")
+                # Clear memory per page
+                del img, img_np, result, page_text, pix
+                gc.collect()
 
-    # Show all text
-    st.subheader("📜 Full Extracted Text")
-    st.text_area("Text", extracted_text, height=300)
+            except Exception as e:
+                st.error(f"Failed on page {page_num + 1}: {e}")
+
+        st.subheader("📜 Full Extracted Text")
+        st.text_area("Text", extracted_text, height=300)
+
+    except Exception as e:
+        st.error(f"Failed to open PDF: {e}")
