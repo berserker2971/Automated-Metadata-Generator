@@ -15,7 +15,7 @@ def extract_title(text, title_len = 20):
 def generate_summary(text, max_len=200):
     words = text.split()
     if len(words) < 40:
-        return text.strip()
+        return text.strip() 
     
     summaries = []
     chunk_size = 400
