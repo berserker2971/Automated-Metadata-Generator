@@ -8,6 +8,7 @@ from zipfile import ZipFile
 import numpy as np
 import streamlit as st
 import easyocr
+import re
 
 @st.cache_resource
 def get_ocr_reader():
@@ -56,16 +57,26 @@ def ocr_docx_extract(file_path):
 def txt_extract(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         return f.read().strip()
+    
+def clean_text(text):
+    text = re.sub(r"\n+", "\n", text) 
+    text = re.sub(r"\s{2,}", " ", text)       
+    text = re.sub(r"[^\w\s.,;:?!'-]", '', text)  
+    return text.strip()
 
 def extract(file_path):
     ext = os.path.splitext(file_path)[1].lower()
 
     if ext == ".pdf":
         text = pdf_extract(file_path)
-        return text or ocr_pdf_extract(file_path)
+        if not text:
+            text = ocr_pdf_extract(file_path)
     elif ext == ".docx":
-        return docx_extract(file_path)
+        text = docx_extract(file_path)
     elif ext == ".txt":
-        return txt_extract(file_path)
+        text = txt_extract(file_path)
     else:
         raise ValueError("Unsupported file format.")
+
+    return clean_text(text)
+
