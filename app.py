@@ -16,7 +16,7 @@ uploaded_file = st.file_uploader("Upload File", type=["pdf", "docx", "txt"])
 
 @st.cache_resource
 def get_summarizer():
-    return pipeline("summarization", model="philschmid/bart-large-cnn-samsum")
+    return pipeline("summarization", model="knkarthick/MEETING_SUMMARY")
 
 @st.cache_resource
 def get_kw_model():
