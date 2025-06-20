@@ -5,7 +5,7 @@ pillow
 pymupdf
 easyocr
 numpy
-transformers==4.40.1
+transformers
 keybert
 sentence-transformers
 scikit-learn
