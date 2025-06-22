@@ -20,6 +20,8 @@ Upload a `.pdf`, `.docx`, or `.txt` file. The app processes the file using:
 
 ## 🖥️ Running the App Locally
 
+**RUN ON PYTHON VERSION 3.11 or 3.10 DO NOT USE 3.13 version of python as not all the libraries are updated accordingly**
+
 ### 1. Clone the Repository
 
 ```bash

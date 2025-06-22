@@ -11,6 +11,59 @@ from docx import Document
 import pdfplumber
 import fitz
 
+def format_datetime(iso_str):
+    try:
+        dt = datetime.fromisoformat(iso_str)
+        return dt.strftime("%B %d, %Y at %I:%M %p %Z") or dt.strftime("%B %d, %Y at %I:%M %p UTC")
+    except Exception:
+        return iso_str
+
+from datetime import datetime, timedelta, timezone
+import re
+
+def decode_pdf_date(date_str):
+    if not date_str:
+        return None
+
+    try:
+        # Remove 'D:' prefix if present
+        if date_str.startswith("D:"):
+            date_str = date_str[2:]
+
+        # Match basic parts
+        pattern = r"(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})" \
+                  r"(?P<hour>\d{2})(?P<minute>\d{2})(?P<second>\d{2})?" \
+                  r"(?P<tz_sign>[+-Z])?(?P<tz_hour>\d{2})?'?(?P<tz_minute>\d{2})?'?"
+
+        match = re.match(pattern, date_str)
+        if not match:
+            return None
+
+        parts = match.groupdict()
+        dt = datetime(
+            int(parts["year"]),
+            int(parts["month"]),
+            int(parts["day"]),
+            int(parts["hour"]),
+            int(parts["minute"]),
+            int(parts.get("second") or 0)
+        )
+
+        if parts["tz_sign"] in ["+", "-"]:
+            tz_offset = timedelta(
+                hours=int(parts["tz_hour"] or 0),
+                minutes=int(parts["tz_minute"] or 0)
+            )
+            if parts["tz_sign"] == "-":
+                tz_offset = -tz_offset
+            dt = dt.replace(tzinfo=timezone(tz_offset))
+        elif parts["tz_sign"] == "Z":
+            dt = dt.replace(tzinfo=timezone.utc)
+
+        return format_datetime(dt.isoformat())
+    except Exception:
+        return None
+
 
 def run_easyocr(img_np):
     import easyocr
@@ -48,7 +101,6 @@ def ocr_pdf_extract(file_path, max_pages=3):
                 result = run_easyocr(img_np)
                 text += " ".join([txt for _, txt, _ in result]) + "\n"
 
-                # Cleanup
                 del img, img_np, result, pix
                 gc.collect()
             except Exception as e:
@@ -114,16 +166,47 @@ def clean_text(text):
 
 def extract(file_path):
     ext = os.path.splitext(file_path)[1].lower()
+    text = ""
+    author = None
+    creation_date = None
 
     if ext == ".pdf":
+        try:
+            with fitz.open(file_path) as doc:
+                meta = doc.metadata
+                author = meta.get("author") or meta.get("Author")
+                creation_date = meta.get("creationDate") or meta.get("CreationDate")
+                creation_date = decode_pdf_date(creation_date) if creation_date else None
+        except Exception as e:
+            st.warning(f"Metadata extraction from PDF failed: {e}")
+
         text = pdf_extract(file_path)
         if not text:
             text = ocr_pdf_extract(file_path)
+
     elif ext == ".docx":
+        try:
+            doc = Document(file_path)
+            props = doc.core_properties
+            author = props.author
+            creation_date = str(props.created)
+            creation_date = decode_pdf_date(creation_date) if creation_date else None
+        except Exception as e:
+            st.warning(f"Metadata extraction from DOCX failed: {e}")
+
         text = docx_extract(file_path)
+
     elif ext == ".txt":
         text = txt_extract(file_path)
+
     else:
         raise ValueError("Unsupported file format.")
 
-    return clean_text(text)
+    text = clean_text(text)
+
+    return {
+        "text": text,
+        "author": author or "Unknown",
+        "creation_date": creation_date or "Unknown"
+    }
+
