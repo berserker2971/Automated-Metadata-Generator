@@ -21,7 +21,7 @@ def format_datetime(iso_str):
 from datetime import datetime, timedelta, timezone
 import re
 
-def decode_pdf_date(date_str):
+def decode_date(date_str):
     if not date_str:
         return None
 
@@ -176,7 +176,7 @@ def extract(file_path):
                 meta = doc.metadata
                 author = meta.get("author") or meta.get("Author")
                 creation_date = meta.get("creationDate") or meta.get("CreationDate")
-                creation_date = decode_pdf_date(creation_date) if creation_date else None
+                creation_date = decode_date(creation_date) if creation_date else None
         except Exception as e:
             st.warning(f"Metadata extraction from PDF failed: {e}")
 
@@ -189,10 +189,19 @@ def extract(file_path):
             doc = Document(file_path)
             props = doc.core_properties
             author = props.author
-            creation_date = str(props.created)
-            creation_date = decode_pdf_date(creation_date) if creation_date else None
+
+            # props.created is already a datetime object or None
+            if props.created:
+                creation_date = props.created.isoformat()
+                creation_date = format_datetime(creation_date) if creation_date else None
+
+            else:
+                creation_date = None
+
         except Exception as e:
             st.warning(f"Metadata extraction from DOCX failed: {e}")
+            author = None
+            creation_date = None
 
         text = docx_extract(file_path)
 

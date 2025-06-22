@@ -48,18 +48,27 @@ if uploaded_file is not None:
                 summarizer,
                 kw_model,
                 author=author,
-                subject=None,  # Removed subject input
                 creation_date=creation_date or datetime.today().strftime("%Y-%m-%d")
             )
 
-            # Add document name
-            metadata["doc_name"] = file_name
+            metadata["doc_name"] = os.path.splitext(file_name)[0]
+            doc_type = os.path.splitext(file_name)[1].lower()
+            if(doc_type == ".pdf"):
+                metadata["doc_type"] = "PDF Document"
+            elif(doc_type == ".docx"):
+                metadata["doc_type"] = "Word Document"
+            elif(doc_type == ".txt"):
+                metadata["doc_type"] = "Text Document"
+            else:  
+                metadata["doc_type"] = "Unknown Document Type"
 
-            # Display metadata
             st.success("✅ Metadata Generated!")
 
             st.markdown("### 📄 Document Name")
             st.write(metadata['doc_name'])
+
+            st.markdown("### 📁 Document Type")
+            st.write(metadata['doc_type'])
 
             st.markdown("### 🏷️ Title")
             st.write(metadata['title'])

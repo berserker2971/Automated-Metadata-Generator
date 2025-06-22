@@ -5,7 +5,7 @@ def extract_title(text, title_len=25):
     lines = text.strip().split('\n')
     line=lines[0]
     for i in lines:
-        if(len(i)>5):
+        if(len(i)>=5):
             line = i
             break  
     title=""
