@@ -53,6 +53,7 @@ The app will be available at: [http://localhost:8501](http://localhost:8501)
 ├── metadata_gen.py     # Title, summary, and keyword generation
 ├── requirements.txt    # Python package requirements
 ├── sample_files        # With some sample .pdfs .docx and .txt files(Inside has some test files)
+├── demo.mp4            # A video explaining how to use the webapp
 └── README.md           # Readme file
 ```
 
