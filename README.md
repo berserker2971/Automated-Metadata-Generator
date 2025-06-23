@@ -67,10 +67,13 @@ The app will be available at: [http://localhost:8501](http://localhost:8501)
 ---
 
 ## 📤 Output
-
+- 📄 **Document Name**
+- 📁 **Document Type**
 - 🏷️ **Title**
-- 📚 **Summary**
+- 👤 **Author**
+- 📅 **Creation Date**
 - 🔑 **Keywords**
+- 📚 **Summary**
 - 📥 **Download Metadata** (as JSON)
 
 ---
@@ -83,12 +86,6 @@ The app will be available at: [http://localhost:8501](http://localhost:8501)
 - [Streamlit](https://streamlit.io/)
 - [pdfplumber](https://github.com/jsvine/pdfplumber)
 - [python-docx](https://python-docx.readthedocs.io/)
-
----
-
-## 📎 License
-
-This project is licensed under the MIT License.
 
 ---
 
