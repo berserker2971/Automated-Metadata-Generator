@@ -6,7 +6,7 @@ An AI-powered Streamlit web application designed to **automatically extract and 
 Whether you're managing thousands of documents in a digital library or want to extract quick insights from a research paper or meeting notes — this app significantly cuts down manual work and improves document discoverability.
 
 👉 **Live App**: [automated-metadata-generator.streamlit.app](https://automated-metadata-generator.streamlit.app/)  
-🎥 **Demo Video**: [Watch the Demo](https://github.com/berserker2971/Automated-Metadata-Generator/blob/main/demo.mp4)
+🎥 **Demo Video**: [Watch the Demo](https://youtu.be/qkDKGK_8cCY)
 
 ---
 
