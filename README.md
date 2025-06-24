@@ -78,13 +78,12 @@ Go to [http://localhost:8501](http://localhost:8501) to use the app.
 ## 📁 Project Structure
 
 ```
-├── app.py              # Streamlit UI
-├── utils.py            # File I/O, OCR, and extraction
-├── metadata_gen.py     # NLP-based metadata generation
-├── sample_files        # Example input documents
-├── demo.mp4            # Demo video walkthrough
-├── requirements.txt    # List of dependencies
-└── README.md           # This documentation
+├── app.py              # Streamlit UI logic
+├── utils.py            # File extraction and OCR utilities
+├── metadata_gen.py     # Title, summary, and keyword generation
+├── requirements.txt    # Python package requirements
+├── sample_files        # With some sample .pdfs .docx and .txt files(Inside has some test files)
+└── README.md           # Readme file
 ```
 
 ---
