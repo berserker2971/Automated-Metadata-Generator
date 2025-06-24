@@ -18,8 +18,8 @@ This app automates metadata extraction by analyzing the document text and metada
 - 📚 A concise **summary**
 - 🔑 The most relevant **keywords**
 - 📄 **File name** and **type**
-- 👤 **Author** (extracted from file metadata, if available)
-- 📅 **Creation date** (from file metadata, if available)
+- 👤 **Author** 
+- 📅 **Creation date** 
 
 ---
 
@@ -92,7 +92,7 @@ Go to [http://localhost:8501](http://localhost:8501) to use the app.
 ## 🗂️ Supported Formats
 
 - `.pdf` — if no text is found, OCR kicks in
-- `.docx` — extracted via python-docx
+- `.docx` — if no text is found, OCR kicks in
 - `.txt` — direct read
 
 ---
