@@ -1,26 +1,56 @@
 
 # 📄 Auto Metadata Generator
 
-An AI-powered Streamlit web app that extracts structured metadata (Title, Summary, Keywords) from documents like PDFs, Word files, and plain text files. This tool is especially useful for content archiving, indexing, and semantic search.
+An AI-powered Streamlit web application designed to **automatically extract and generate rich, structured metadata** from document formats like `.pdf`, `.docx`, and `.txt`. Leveraging natural language processing and modern file analysis tools, it transforms raw files into machine-readable summaries enriched with **titles, keywords, authorship, creation date**, and more. This application is particularly useful for tasks involving **semantic document indexing**, **digital archiving**, **automated tagging**, and **content classification**.
 
-👉 **Live App**: [automated-metadata-generator.streamlit.app](https://automated-metadata-generator.streamlit.app/)
+Whether you're managing thousands of documents in a digital library or want to extract quick insights from a research paper or meeting notes — this app significantly cuts down manual work and improves document discoverability.
+
+👉 **Live App**: [automated-metadata-generator.streamlit.app](https://automated-metadata-generator.streamlit.app/)  
+🎥 **Demo Video**: [Watch the Demo](https://github.com/berserker2971/Automated-Metadata-Generator/blob/main/demo.mp4)
+
+---
+
+## 💡 What It Does
+
+This app automates metadata extraction by analyzing the document text and metadata to generate:
+
+- 🏷️ A representative **title**
+- 📚 A concise **summary**
+- 🔑 The most relevant **keywords**
+- 📄 **File name** and **type**
+- 👤 **Author** (extracted from file metadata, if available)
+- 📅 **Creation date** (from file metadata, if available)
 
 ---
 
 ## 🔧 How It Works
 
-Upload a `.pdf`, `.docx`, or `.txt` file. The app processes the file using:
+When you upload a document:
 
-- 🧠 **Summarizer** (`knkarthick/MEETING_SUMMARY`) — creates a short summary.
-- 🧠 **Keyword Extractor** (`KeyBERT`) — identifies key topics.
-- 🧾 **Title Extractor** — selects a representative line as the title.
-- 🔍 **OCR** (via EasyOCR) — fallback for scanned/image-based content.
+1. **Text is extracted** using:
+   - `pdfplumber` for PDFs
+   - `python-docx` for Word files
+   - direct reading for `.txt` files
+
+2. If the document has **no extractable text** (e.g. scanned PDFs or images), the app automatically uses **OCR with EasyOCR**.
+
+3. It then runs NLP tasks:
+   - 🧠 **Summarization** using `knkarthick/MEETING_SUMMARY`
+   - 🔑 **Keyword extraction** using KeyBERT
+   - 🏷️ **Title extraction** from the first meaningful short line in the document
+
+4. It also pulls embedded metadata like:
+   - 👤 **Author name**
+   - 📅 **Creation date**
+
+5. You can view and **download the complete metadata as JSON**.
 
 ---
 
 ## 🖥️ Running the App Locally
 
-**RUN ON PYTHON VERSION 3.10 DO NOT USE 3.13 version of python as not all the libraries are updated accordingly**
+> ⚠️ **Use Python 3.10**  
+> Do **not** use Python 3.13 — some dependencies like `transformers` may not yet fully support it.
 
 ### 1. Clone the Repository
 
@@ -29,7 +59,7 @@ git clone https://github.com/berserker2971/Automated-Metadata-Generator
 cd Automated-Metadata-Generator
 ```
 
-### 2. Install Python Dependencies
+### 2. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -41,55 +71,101 @@ pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-The app will be available at: [http://localhost:8501](http://localhost:8501)
+Go to [http://localhost:8501](http://localhost:8501) to use the app.
 
 ---
 
-## 📁 File Structure
+## 📁 Project Structure
 
 ```
-├── app.py              # Streamlit UI logic
-├── utils.py            # File extraction and OCR utilities
-├── metadata_gen.py     # Title, summary, and keyword generation
-├── requirements.txt    # Python package requirements
-├── sample_files        # With some sample .pdfs .docx and .txt files(Inside has some test files)
-├── demo.mp4            # A video explaining how to use the webapp
-└── README.md           # Readme file
+├── app.py              # Streamlit UI
+├── utils.py            # File I/O, OCR, and extraction
+├── metadata_gen.py     # NLP-based metadata generation
+├── sample_files        # Example input documents
+├── demo.mp4            # Demo video walkthrough
+├── requirements.txt    # List of dependencies
+└── README.md           # This documentation
 ```
 
 ---
 
-## 🗂️ Supported File Formats
+## 🗂️ Supported Formats
 
-- `.pdf` (with OCR fallback)
-- `.docx` (with embedded image OCR)
-- `.txt`
-
----
-
-## 📤 Output
-- 📄 **Document Name**
-- 📁 **Document Type**
-- 🏷️ **Title**
-- 👤 **Author**
-- 📅 **Creation Date**
-- 🔑 **Keywords**
-- 📚 **Summary**
-- 📥 **Download Metadata** (as JSON)
+- `.pdf` — if no text is found, OCR kicks in
+- `.docx` — extracted via python-docx
+- `.txt` — direct read
 
 ---
 
-## 🧠 Libraries & Models Used
+## 📤 Metadata Output
 
-- [Transformers (Hugging Face)](https://huggingface.co/transformers/)
-- [KeyBERT](https://github.com/MaartenGr/KeyBERT)
-- [EasyOCR](https://github.com/JaidedAI/EasyOCR)
-- [Streamlit](https://streamlit.io/)
-- [pdfplumber](https://github.com/jsvine/pdfplumber)
-- [python-docx](https://python-docx.readthedocs.io/)
+| Field             | Description                                                   |
+|------------------|---------------------------------------------------------------|
+| 📄 `doc_name`     | Name of the uploaded file                                     |
+| 📁 `file_type`    | File extension (e.g., `pdf`, `docx`, `txt`)                   |
+| 🏷️ `title`        | First meaningful short line extracted from content            |
+| 👤 `author`       | Extracted from file metadata (if available)                   |
+| 📅 `creation_date`| Extracted from file metadata (if available)                   |
+| 🔑 `keywords`     | Top keywords from content using KeyBERT                       |
+| 📚 `summary`      | Compressed, readable version of the full document             |
 
 ---
 
-## 📬 Contact
+## 📥 Download as JSON
 
-For feedback, issues, or contributions, feel free to open an issue or a pull request on the [GitHub repository](https://github.com/berserker2971/Automated-Metadata-Generator).
+Once processed, you can click a button to **download all the metadata** as a structured `.json` file, which is perfect for:
+
+- Knowledge base ingestion
+- Content indexing
+- AI pipelines
+- Internal search engines
+- Digital archiving systems
+
+---
+
+## 🚀 Features – In Depth
+
+### 📄 1. Document Upload (PDF, DOCX, TXT)
+Supports the most common formats used in research, documentation, and content workflows.
+
+### 🧾 2. File Parsing & OCR Fallback
+If there's no text (like in scanned images), OCR with EasyOCR recovers content automatically.
+
+### 🧠 3. Summarization
+Uses a transformer model to condense long documents into short, high-level summaries.
+
+### 🔑 4. Keyword Extraction
+Extracts top semantic keywords using KeyBERT — useful for tagging, filtering, and categorization.
+
+### 🏷️ 5. Title Generation
+Heuristically chooses a strong title from early content in the document.
+
+### 👤 6. Author Extraction
+If author metadata is embedded in the file (like Word doc properties or PDF tags), it is auto-extracted.
+
+### 📅 7. Creation Date
+The app extracts the original creation date from the file’s metadata (when available).
+
+### 📥 8. Download as JSON
+Ready-to-use metadata file for integration into any backend or information system.
+
+---
+
+## 🧠 Tech Stack
+
+| Component        | Library / Model                                                |
+|------------------|----------------------------------------------------------------|
+| UI               | Streamlit                                                      |
+| Summarization    | `knkarthick/MEETING_SUMMARY` (Hugging Face)                    |
+| Keywords         | KeyBERT                                                        |
+| PDF Parsing      | pdfplumber                                                     |
+| DOCX Reading     | python-docx                                                    |
+| OCR              | EasyOCR                                                        |
+
+---
+
+## 📬 Feedback & Contributions
+
+- Open issues or pull requests on the [GitHub repo](https://github.com/berserker2971/Automated-Metadata-Generator)
+- Feature suggestions welcome!
+- If you find this tool helpful, a ⭐️ is appreciated!
